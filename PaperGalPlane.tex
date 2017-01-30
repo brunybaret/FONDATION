@@ -1,0 +1,268 @@
+%\documentclass[10pt,b5paper]{article}
+\documentclass[final,twoside,onecolumn,10pt]{article}
+
+\usepackage{graphicx}
+\setkeys{Gin}{draft} %to not show the pictures and compile faster (the draft option of graphicx does not work)
+
+\usepackage[mathletters]{ucs}
+\usepackage[utf8x]{inputenc}
+
+%\pagestyle{headings}
+%\usepackage[latin1]{inputenc}
+\usepackage{amsmath}
+%\usepackage{amsfonts}
+%\usepackage{amssymb}
+\usepackage{xkeyval}
+\presetkeys{Gin}{width=1\textwidth}{} %permet de donner cette option a toutes les images
+\usepackage{amsthm} %to use \newtheorem{name}{Printed output}
+
+\usepackage[width=18.00cm, height=25.00cm]{geometry}
+\usepackage{multirow}
+
+\usepackage[T1]{fontenc}
+\usepackage{caption}
+%\usepackage{tikz}
+%\usetikzlibrary{arrows} %,backgrounds,shapes,trees} % loads some tikz extensions
+%\tikzstyle{every picture}+=[remember picture]
+\usepackage{lmodern}
+\usepackage{pifont} % pour avoir les items que je veux
+\usepackage{booktabs}
+%\usepackage[mathcal]{eucal}
+\usepackage{syntonly}
+%\syntaxonly % A utiliser (avec package syntonly) pour verifier la syntaxe sans produire le document !!!
+\usepackage{sidecap} % pour mettre les captions des images seules sur le cote (en utilisant SCfigure)
+%\setlength{\parindent}{0pt} %To remove indentation
+\usepackage{subfigure}
+
+\title{Search for High Energy neutrinos from the Galaxy with the ANTARES neutrino telescope} % Title
+
+\author{Timothée \textsc{Grégoire}} % Author name
+
+\date{\today} % Date for the report
+
+\begin{document}
+%\sloppy % Pour quand LaTeX fait un overfull hbox parce qu'il ne sait pas comment couper un mot pour passer Ã  la ligne
+
+\maketitle % Insert the title, author and date
+
+\begin{center}
+	\begin{tabular}{l r}
+	Laboratoire APC, Paris % Instructor/supervisor
+	\end{tabular}
+\end{center}
+
+
+
+\section{Event Selection}
+	The event selection is adapted from (Thèse de Tino ou papier de Javier, selon...)
+
+	An event is selected as a track-like event if it is reconstructed up-going to reject atmospheric muons. It should also have a good reconstruction quality and an angular error estimate smaller than 1°.
+
+	(Je ne parle pas des triggers, devrais-je ?)
+
+	To be selected as shower-like, an event should not have been selected as a track-like event to avoid overlapping.
+	Then, the rejection of atmospheric muons is the main goal of the  shower event selection.
+	When a muon is reconstructed by the shower algorithm, the reconstructed position often lie far away from the detector, so the reconstructed position is selected to be contained in the detector and the value of the M-estimator used to fit this position is required to be not too high.
+	The rejection of atmospheric muons is also done selecting events reconstructed as up-going, using a dedicated likelihood function and a random decision forest algorithm. Their is also a selection on the angular error estimator.
+
+
+\section{Search Method}
+	When the signal searched for is well defined and that the probability density functions of observables are known, which is the case here, the likelihood ratio test has maximum power. It has already been applied to various searches in neutrino astronomy and in particular on ANTARES data (\cite{Tino_ICRC} citations) on reduced portions of the sky for individual point-like or extended sources at the degree scale (à vérifier).
+	It is adapted here to a full sky search where the all sky signal map is computed according to the KRA$_{γ}$ model presented in section ??. The data are considered to be a mixture of signal and background events, so the likelihood is defined as:
+
+	\begin{equation}
+			\mathcal{L}_{sig+bkg} = \prod\limits_{\mathcal{S} \in \{ tr, sh \} } \prod\limits_{i \in \mathcal{S}}[\mu_{sig}^\mathcal{S}\cdot pdf_{sig}^\mathcal{S}(E_i, \vec{x_i})+\mu_{bkg}^\mathcal{S}\cdot pdf_{bkg}^\mathcal{S}(E_i, \vec{x_i})]
+	\end{equation}
+
+	
+	Where $E_i$ is the reconstructed energy of an event $i$ and $\vec{x_i}$ its reconstructed direction. For each type of event $\mathcal{S}$ (track or shower), the number of background events $\mu_{bkg}^\mathcal{S}$ corresponds to the total number of events $\mu_{tot}^\mathcal{S}$ minus the number of signal events $\mu_{sig}^\mathcal{S}$, which is fitted by maximising the likelihood. $\mu_{sig}$ must have a positive value. The maximisation of the likelihood is done using the TMinuit algorithm within the ROOT framework.
+	The signal and background probability density functions of an event are defined as:
+	\begin{equation}
+		pdf_{sig}(α_i, δ_i, E_i) = \mathcal{M}_{sig}^\mathcal{S}(α_i, δ_i) \cdot \mathcal{E}_{sig}^\mathcal{S}(E_i, α_i, δ_i)
+	\end{equation}
+	\begin{equation}
+		pdf_{bkg}(z_i, δ_i, E_i) = \mathcal{M}_{bkg}^\mathcal{S}(δ_i) \cdot \mathcal{E}_{bkg}^\mathcal{S}(E_i, z_i)
+	\end{equation}
+
+	where $\mathcal{M}^\mathcal{S}$ is the probability density function to be at a certain position in the sky. It is in equatorial coordinate (right ascension $α_i$ and declination $δ_i$) for the signal (fig.~\ref{fig:Msig}). Only the declination is used for the background as the right ascension distribution is flat because of the earth rotation. A random combination of two spline parametrizations is used as can be seen on figure~\ref{fig:sindec}.
+	$\mathcal{E}^\mathcal{S}$ is the probability density function to have a certain energy. In the signal case, it depends on the equatorial coordinates as the energy spectrum of the KRA$_γ$ model depends on the position in the sky. To gain CPU time, $\mathcal{E}_{sig}$ is considered to be $pdf(E_i, δ_i) \cdot pdf(E_i, α_i)$ using the distributions represented on figure~\ref{fig:Sig2D}. For the background, it depends on the corresponding zenith to account for systematics (fig.~\ref{fig:bg2D}). All these distributions are made from MC simulations except for $\mathcal{M}_{bkg}^\mathcal{S}(δ_i)$.
+
+
+	\begin{figure}
+		\begin{minipage}{0.485\linewidth}
+			\centering
+			\includegraphics {Figures/timothee_morpho_sh_aitoff.png}
+		\end{minipage}
+		\hspace*{\fill}
+		\begin{minipage}{0.485\linewidth}
+			\centering
+			\includegraphics {Figures/timothee_morpho_tr_aitoff.png}
+		\end{minipage}
+		\caption{Probability density function of the reconstructed position of a signal event in equatorial coordinates. \textbf{Left:} Shower-like events, \textbf{Right:} Track-like events.}\label{fig:Msig}
+	\end{figure}
+
+	\begin{figure}
+		\begin{minipage}{0.485\linewidth}
+			\centering
+			\includegraphics {Figures/timothee_2Dspect_sh_dec.png}
+		\end{minipage}
+		\hspace*{\fill}
+		\begin{minipage}{0.485\linewidth}
+			\centering
+			\includegraphics {Figures/timothee_2Dspect_tr_dec.png}
+		\end{minipage}
+
+		\begin{minipage}{0.485\linewidth}
+			\centering
+			\includegraphics {Figures/timothee_2Dspect_sh_ra.png}
+		\end{minipage}
+		\hspace*{\fill}
+		\begin{minipage}{0.485\linewidth}
+			\centering
+			\includegraphics {Figures/timothee_2Dspect_tr_ra.png}
+		\end{minipage}
+		\caption{Signal distribution of the energy estimator in function of the reconstructed (\textbf{Above:}) declination and (\textbf{Below:}) right ascension. \textbf{Left:} Shower-like events, \textbf{Right:} Track-like events.}\label{fig:Sig2D}
+	\end{figure}
+
+	\begin{figure}
+		\begin{minipage}{0.485\linewidth}
+			\centering
+			\includegraphics {Figures/timothee_sindec_sh_withoutMC.png}
+		\end{minipage}
+		\hspace*{\fill}
+		\begin{minipage}{0.485\linewidth}
+			\centering
+			\includegraphics {Figures/timothee_sindec_tr_withoutMC.png}
+		\end{minipage}
+		\caption{Background distribution of the sine of the reconstructed declination. The red and green curves are two different spline parametrisations of the data used to get $\mathcal{M}_{bkg}$. \textbf{Left:} Shower-like events, \textbf{Right:} Track-like events.}\label{fig:sindec}
+	\end{figure}
+
+	\begin{figure}
+		\begin{minipage}{0.485\linewidth}
+			\centering
+			\includegraphics {Figures/timothee_bgr_spect2D_sh.png}
+		\end{minipage}
+		\hspace*{\fill}
+		\begin{minipage}{0.485\linewidth}
+			\centering
+			\includegraphics {Figures/timothee_bgr_spect2D_tr.png}
+		\end{minipage}
+		\caption{Background distribution of the energy estimator versus the reconstructed zenith. \textbf{Left:} Shower-like events, \textbf{Right:} Track-like events.}\label{fig:bg2D}
+	\end{figure}
+
+
+	The logarithm of the likelihood can be rewritten as:
+	\begin{equation}
+		log\mathcal{L}_{sig+bkg} = \sum\limits_{\mathcal{S} \in \{ tr, sh \} } ~\sum\limits_{i \in \mathcal{S}} ~log[ \mu_{sig}^\mathcal{S}\cdot
+		\mathcal{M}_{sig}^\mathcal{S}(α_i, δ_i) \cdot\mathcal{E}_{sig}^\mathcal{S}(E_i, δ_i, α_i)+(\mu_{tot}^\mathcal{S} - \mu_{sig}^\mathcal{S}) \cdot\mathcal{M}_{bkg}^\mathcal{S}(δ_i) \cdot\mathcal{E}_{bkg}^\mathcal{S}(E_i, z_i) ]
+		\newline
+	\end{equation}
+
+
+	Then to have a better capacity to choose between background or signal hypotheses, the likelihood to have some signal is weighted against the likelihood to have only background in our data. So a test statistic which is the logarithm of the likelihood ratio is build:
+
+	\begin{equation}
+		TS = log(\mathcal{L}_{sig+bkg}) - log(\mathcal{L}_{bkg})
+	\end{equation}
+
+	with $\mathcal{L}_{bkg} = \mathcal{L}_{sig+bkg}(\mu_{sig}^{sh}=\mu_{sig}^{tr}=0)$.
+
+
+	To choose between different hypotheses, it is necessary to get the probability density function of the test statistic for each hypothesis so for each value of the KRA$_γ$ flux (including a null flux, the background-only hypothesis). To do so, pseudo-experiments are produced for each possible value of $\mu_{sig}^{sh + tr}$. A pseudo-experiment is a set of events that is generated using the probability density functions of the energy estimator and angular position (in local coordinates for the background to account for the effects of the detector symmetries). 100,000 pseudo-experiments are produced for a value of $\mu_{sig}^{sh + tr} = 0$ and 10,000 pseudo-experiments for each other value of $\mu_{sig}^{sh + tr}$ in [1, 55].
+
+	For each pseudo-experiment the test statistic is computed, so for each number of signal events passing the cuts, the distribution of these test statistics gives the probability density function $pdf_{\mu_{sig}^{sh + tr}}(TS)$. The interesting quantity is the flux, so knowing that a flux will produce a mean of n events, $pdf_{\mu_{sig}^{sh + tr}}(TS)$ is converted into the probability density function to have a certain flux $\Phi$, $pdf_{\Phi}(TS)$:
+
+	\begin{equation}
+	pdf_\Phi(TS) = pdf_{<\mu_{sig}^{sh + tr}>=n}(TS) = \sum\limits_{i} P(i|n)\cdot pdf_{\mu_{sig}^{sh + tr}=i}(TS)\label{pdf_flux}
+	\end{equation}
+
+	\noindent
+	with $P$ a Poissonian.
+
+	Some of these probability density functions can be seen on the figure~\ref{fig:pdfTS}.
+
+
+	\begin{figure}
+		\begin{minipage}{0.485\linewidth}
+		\centering
+		\includegraphics {Figures/timothee_pdf_TS.png}
+		\caption{Probability density function of the test statistic for different fluxes corresponding to a mean of \{0, 11, 22, 33, 44\} events passing the cuts. Note that the binning is not constant.}\label{fig:pdfTS}
+		\end{minipage}
+		\hspace*{\fill}
+		\begin{minipage}{0.485\linewidth}	
+			\centering
+			\includegraphics {Figures/timothee_UL_vs_TS_fitted.png}
+			\caption{UL that can be putted in function of the value of the test statistic, fitted by $(ax+b) \cdot (1-c \cdot e^{dx})$.}\label{fig:UL_TS}
+			\centering
+		\end{minipage}
+	\end{figure}
+	
+	\begin{figure}%
+		\centering
+		\caption{Anti-cumulative of the probability density function of the test statistic. It gives the probability to have a test statistic bigger than the value in x axis.}\label{fig:antiCumTS_}
+		\subfigure[Different curves corresponding to different fluxes.]{\includegraphics[width=0.48\linewidth] {Figures/timothee_antiCumTS.png}\label{fig:antiCumTS} }
+		\hspace*{\fill}	
+		\subfigure[Only the background hypothesis with the y axis in logarithm scale and a zoom in x axis. The vertical lines show the value of the test statistic above which there is a probability smaller than 2$\sigma$ (left line) or 3$\sigma$ (right line) to have a bigger test statistic.]{\includegraphics[width=0.48\linewidth] {Figures/timothee_antiCumTS_bg.pdf}\label{fig:antiCumTS_bg} }\\
+	\end{figure}
+
+
+	Then the anti-cumulatives of these probability density functions (fig.~\ref{fig:antiCumTS_}(a)) are computed. It gives the probability to have a test statistic bigger than a certain value for each hypothesis. Let's call P the p-value, i.e. the probability that the background has a test statistic bigger than TS$_{P}$. This is given by the plot represented on figure~\ref{fig:antiCumTS_}(b) with P in y axis and TS$_{P}$ the corresponding value in x.
+
+	Then, the median upper limit at 90\% confidence level, UL(TS$_{0.5}$), corresponds to the value of the flux which has more than 90\% probability to have a test statistic bigger than TS$_{0.5}$.
+
+	The average upper limit is:
+	\begin{equation}
+		<\text{UL}> = \sum\limits_{P} \text{UL}(\text{TS}_P) \times pdf_{bkg}(\text{TS}_P)
+	\end{equation}
+
+	with UL($\text{TS}$) shown on figure~\ref{fig:UL_TS} and $pdf_{bkg}(\text{TS})$ is the distribution filled in yellow on figure~\ref{fig:pdfTS}.
+
+	The discovery probability at 3$\sigma$ correspond to the probability to have a test statistic bigger than TS$_{3\sigma}$ for the signal hypothesis.
+
+
+
+\section{Sensitivity estimation}
+	There is 208 shower-like events and 7300 track-like events in our data. The mean number of events that is expected from the KRA$_γ$ model version with the cut at $5\cdot10^7$ GeV is $<\mu_{sig}>$ = 13.720 events with 20.3\% of showers. The energy range is between $2.2$ and $258$ TeV for the showers and between $402$ GeV and $230$ TeV for the tracks.
+	
+	The sensitivity obtained, defined as the median upper limit at 90$\%$ confidence level, is $1.166$ times the KRA$_γ$ flux ($\Phi_{KRA_γ}$), which corresponds to a mean of 16 events and the average upper limit is $1.026 \cdot \Phi_{KRA_γ}$, which correspond to a mean of 14.08 events. If the model is correct, there is 13.4$\%$ probability to claim a 3$\sigma$ discovery. Figure~\ref{fig:disco} illustrate the evolution of the discovery probability in function of the percentage of the KRA$_γ$ flux and figure~\ref{fig:antiCumTS_}(b) gives the probability to have a test statistic bigger than the one in x axis in the background-only hypothesis.
+	
+	For the version with the cut at $5\cdot10^6$ GeV, a mean of 11.623 events is expected with 19.7\% of showers. The median upper limit is $1.55 \cdot \Phi_{KRA_γ}$, which corresponds to a mean of 18 events and the average upper limit is 1.354 times KRA$_γ$ flux, which correspond to a mean of 15.73 events. The probability to claim a 3$\sigma$ discovery of this flux is 6.78\%.
+	
+	
+\section{Results}
+	The background parametrisation being a combination of two splines using a random number $r_{dec}$, the test statistic and the number of fitted events are the average for $5000$ values of $r_{dec}$.
+	For the version of the KRA$_γ$ model with the cut at $5\cdot10^7$ GeV the data give an average test statistic of $0.650$. The number of fitted tracks is $<\mu_{\text{fitted tracks}}> = 0.00$ and showers $<\mu_{\text{fitted showers}}> = 3.18$. The p-value is obtained using the value of the test statistic and the curve represented on figure~\ref{fig:antiCumTS_}(b), it is 0.456. The upper limit is obtained from the fit of the curve of the upper limit in function of the test statistic (fig.~\ref{fig:UL_TS}), it is $1.268 \cdot \Phi_{KRA_γ}$.
+	The corresponding probability density function for the background-only hypothesis is 0.13 and 0.19 for the signal hypothesis.
+	
+	\begin{figure}
+		\begin{minipage}{0.485\linewidth}
+			\centering
+			\includegraphics {Figures/timothee_disco.png}
+			\caption{Discovery probability at 3$\sigma$ in function of the signal neutrino flux in percentage of the KRA$_γ$ flux.}\label{fig:disco}	
+		\end{minipage}
+		\hspace*{\fill}
+		\begin{minipage}{0.485\linewidth}	
+			\centering
+			\includegraphics {Figures/timothee_nsig_ratio.png}
+			\caption{Distribution of the ratio of the number of fitted shower events over the total number of fitted events. The peaks correspond to a number of fitted showers (left), tracks (right) or both (middle) equal to zero.}\label{fig:nsig_ratio}
+		\end{minipage}
+	\end{figure}
+	For the version of the KRA$_γ$ model with the cut at $5\cdot10^6$ GeV the data give $<TS> = 0.420$, $<\mu_{\text{fitted tracks}}> = 0.00$ and $<\mu_{\text{fitted showers}}> = 2.67$, the p-value is 0.581 and the upper limit is $1.330 \cdot \Phi_{KRA_γ}$. The probability density function at this test statistic is 0.24 for the background-only hypothesis and 0.26 for the signal hypothesis.
+	
+	Figure~\ref{fig:nsig_ratio} show that fitting few shower events and no tracks can happen for background or signal hypotheses.
+
+
+
+\begin{thebibliography}{3}
+%	\bibitem{Gaggero} Gaggero D, Grasso D, Marinelli A, Urbano A and Valli M 2015 The gamma-ray and neutrino sky: A consistent picture of Fermi-LAT, Milagro and IceCube results {\it Astrophys. J.} {\bf 815} L25
+%
+%	\bibitem{nu/anu1} Cavasinni V, Grasso D and Maccione L 2006 TeV neutrinos from supernova remnants embedded in giant molecular clouds {\it Astropart. Phys.} {\bf 26} 41-9
+%
+%	\bibitem{nu/anu2} Kelner S, Aharonian F A and Bugayov V 2006 Energy spectra of gamma-rays, electrons and neutrinos produced at proton-proton interactions in the very high energy regime {\it Phys. Rev. D} {\bf 74} 034018
+%
+	\bibitem{Tino_ICRC} Michael T. \& KM3NeT, 2015, Neutrino point source search including cascade events with the ANTARES neutrino telescope, in proceedings, 34 th International Cosmic Ray Conference (ICRC 2015)
+	
+%	\bibitem{Tino_thesis} Michael T. \& KM3NeT, Light at the end of the Shower
+\end{thebibliography}
+
+\end{document}
